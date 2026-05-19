@@ -1,4 +1,6 @@
+@extends('layouts.app')
 
+@section('content')
 @if (session('message'))
 <div class="alert"></div>
     {{ session('message') }}
@@ -35,3 +37,4 @@
         @endforeach
     </tbody>
 </table>
+@endsection
