@@ -1,0 +1,180 @@
+
+1. Tela Principal
+Problema
+
+Há duplicidade de consultas à tabela de sessões, executando a mesma instrução mais de uma vez sem necessidade:
+
+SELECT * FROM `sessions`
+WHERE `id` = 'JYtJIMxTEelZENhVmTN1ouzmghhS4S8gdN25DtGe'
+LIMIT 1;
+
+SELECT * FROM `sessions`
+WHERE `id` = 'JYtJIMxTEelZENhVmTN1ouzmghhS4S8gdN25DtGe'
+LIMIT 1;
+Melhoria
+
+Executar apenas uma consulta:
+
+SELECT * FROM `sessions`
+WHERE `id` = 'JYtJIMxTEelZENhVmTN1ouzmghhS4S8gdN25DtGe'
+LIMIT 1;
+Ver Biblioteca
+Problema
+
+Consulta inicial para listar as bibliotecas:
+
+SELECT * FROM `bibliotecas`
+WHERE `nome` LIKE '%%';
+
+Em seguida, é executado um loop realizando consultas individuais para cada usuário (problema N+1):
+
+SELECT * FROM `users` WHERE `users`.`id` = 1 LIMIT 1;
+SELECT * FROM `users` WHERE `users`.`id` = 2 LIMIT 1;
+SELECT * FROM `users` WHERE `users`.`id` = 1 LIMIT 1;
+SELECT * FROM `users` WHERE `users`.`id` = 1 LIMIT 1;
+SELECT * FROM `users` WHERE `users`.`id` = 2 LIMIT 1;
+Solução
+
+Utilizar JOIN para buscar os dados em uma única consulta:
+
+SELECT
+    b.id,
+    b.nome,
+    b.endereco,
+    b.telefone,
+    b.email,
+    b.created_at,
+    b.updated_at,
+    u.name AS creator_name
+FROM `bibliotecas` AS b
+INNER JOIN `users` AS u
+    ON u.id = b.created_by
+WHERE b.nome LIKE '%%';
+Criar Biblioteca
+Problema
+
+A consulta carrega todos os campos da tabela de usuários, incluindo informações desnecessárias como senhas:
+
+SELECT * FROM `users`;
+Solução
+
+Buscar apenas os campos necessários:
+
+SELECT
+    id,
+    name,
+    email,
+    endereco,
+    telefone
+FROM `users`;
+Visualização de Biblioteca
+Problema
+
+Ao acessar uma biblioteca, são executadas diversas consultas desnecessárias.
+
+1. Carregamento de todos os usuários
+SELECT * FROM `users`;
+2. Busca da biblioteca selecionada
+SELECT * FROM `bibliotecas`
+WHERE `id` = 1
+LIMIT 1;
+3. Busca das pessoas vinculadas à biblioteca
+SELECT
+    `pessoas`.*,
+    `biblioteca_pessoa`.`biblioteca_id` AS `pivot_biblioteca_id`,
+    `biblioteca_pessoa`.`pessoa_id` AS `pivot_pessoa_id`,
+    `biblioteca_pessoa`.`created_at` AS `pivot_created_at`,
+    `biblioteca_pessoa`.`updated_at` AS `pivot_updated_at`
+FROM `pessoas`
+INNER JOIN `biblioteca_pessoa`
+    ON `pessoas`.`id` = `biblioteca_pessoa`.`pessoa_id`
+WHERE `biblioteca_pessoa`.`biblioteca_id` = 1;
+4. Problema N+1
+
+Consultas individuais são executadas para cada pessoa encontrada:
+
+SELECT ...
+WHERE `biblioteca_pessoa`.`pessoa_id` = 2;
+
+SELECT ...
+WHERE `biblioteca_pessoa`.`pessoa_id` = 3;
+
+SELECT ...
+WHERE `biblioteca_pessoa`.`pessoa_id` = 5;
+
+SELECT ...
+WHERE `biblioteca_pessoa`.`pessoa_id` = 6;
+
+SELECT ...
+WHERE `biblioteca_pessoa`.`pessoa_id` = 7;
+
+SELECT ...
+WHERE `biblioteca_pessoa`.`pessoa_id` = 8;
+Solução
+Usuários
+SELECT id, name
+FROM `users`;
+Biblioteca
+SELECT
+    id,
+    nome,
+    endereco,
+    telefone,
+    email
+FROM `bibliotecas`
+WHERE id = 1
+LIMIT 1;
+Pessoas vinculadas
+SELECT
+    p.id,
+    p.name,
+    p.email,
+    p.telefone,
+    p.matricula,
+    bp.biblioteca_id AS pivot_biblioteca_id,
+    bp.pessoa_id AS pivot_pessoa_id
+FROM `pessoas` AS p
+INNER JOIN `biblioteca_pessoa` AS bp
+    ON p.id = bp.pessoa_id
+WHERE bp.biblioteca_id = 1;
+Bibliotecas relacionadas
+SELECT
+    b.id,
+    b.nome,
+    bp.pessoa_id
+FROM `bibliotecas` AS b
+INNER JOIN `biblioteca_pessoa` AS bp
+    ON b.id = bp.biblioteca_id
+WHERE bp.pessoa_id IN (2, 3, 5, 6, 7, 8);
+Visualização de Usuários
+Problema
+
+A consulta retorna mais dados do que o necessário:
+
+SELECT * FROM `users`;
+Solução
+
+Buscar apenas os campos utilizados na tela:
+
+SELECT
+    id,
+    name,
+    email
+FROM `users`;
+Visualização de Pessoas
+Problema
+
+A consulta retorna todos os dados da tabela, incluindo informações sensíveis e desnecessárias para a tela:
+
+SELECT * FROM `pessoas`;
+Solução
+
+Selecionar apenas os campos necessários:
+
+SELECT
+    id,
+    name,
+    email,
+    matricula,
+    telefone
+FROM `pessoas`;
